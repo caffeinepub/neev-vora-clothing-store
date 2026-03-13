@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --gold: #D4AF37;
+    --gold-light: #F0D060;
+    --gold-dark: #A88B20;
+    --black: #000000;
+    --glass-bg: rgba(0,0,0,0.6);
+    --radius: 0.625rem;
+    --background: 0 0% 0%;
+    --foreground: 51 59% 52%;
+    --card: 0 0% 5%;
+    --card-foreground: 51 59% 52%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 51 59% 52%;
+    --primary: 51 59% 52%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 51 59% 52%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 51 59% 52%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 51 40% 30%;
+    --input: 0 0% 15%;
+    --ring: 51 59% 52%;
+    --sidebar: 0 0% 0%;
+    --sidebar-foreground: 51 59% 52%;
+    --sidebar-primary: 51 59% 52%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 51 59% 52%;
+    --sidebar-border: 51 40% 20%;
+    --sidebar-ring: 51 59% 52%;
+  }
+
+  * { @apply border-border; }
+  html, body, #root { min-height: 100vh; background: #000; }
+  body { font-family: 'Montserrat', sans-serif; background: #000; color: #D4AF37; }
+}
+
+.glass-card {
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(212,175,55,0.3);
+  border-radius: 12px;
+}
+
+.gold-text { color: #D4AF37; }
+.gold-border { border-color: #D4AF37; }
+
+.btn-gold {
+  background: linear-gradient(135deg, #D4AF37 0%, #F0D060 50%, #A88B20 100%);
+  color: #000;
+  font-weight: 700;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.btn-gold:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(212,175,55,0.4);
+}
+
+.btn-outline-gold {
+  border: 1px solid #D4AF37;
+  color: #D4AF37;
+  background: transparent;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.btn-outline-gold:hover {
+  background: rgba(212,175,55,0.1);
+}
+
+input, textarea, select {
+  background: rgba(0,0,0,0.8) !important;
+  border: 1px solid rgba(212,175,55,0.4) !important;
+  color: #D4AF37 !important;
+  border-radius: 8px !important;
+}
+input::placeholder, textarea::placeholder { color: rgba(212,175,55,0.4) !important; }
+input:focus, textarea:focus, select:focus {
+  outline: none !important;
+  border-color: #D4AF37 !important;
+  box-shadow: 0 0 0 2px rgba(212,175,55,0.2) !important;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #D4AF37; }
