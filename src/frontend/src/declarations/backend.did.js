@@ -38,8 +38,8 @@ export const Product = IDL.Record({
   'sizes' : IDL.Vec(IDL.Text),
   'stock' : IDL.Nat,
   'category' : IDL.Text,
-  'image' : ExternalBlob,
   'price' : IDL.Nat,
+  'images' : IDL.Vec(ExternalBlob),
 });
 export const OrderItem = IDL.Record({
   'size' : IDL.Text,
@@ -56,12 +56,6 @@ export const Order = IDL.Record({
   'address' : IDL.Text,
   'phone' : IDL.Text,
   'items' : IDL.Vec(OrderItem),
-});
-export const UserProfile = IDL.Record({
-  'name' : IDL.Text,
-  'email' : IDL.Text,
-  'address' : IDL.Text,
-  'phone' : IDL.Text,
 });
 
 export const idlService = IDL.Service({
@@ -97,30 +91,17 @@ export const idlService = IDL.Service({
   'createCategory' : IDL.Func([Category], [], []),
   'createProduct' : IDL.Func([Product], [], []),
   'deleteCategory' : IDL.Func([IDL.Text], [], []),
+  'deleteOrder' : IDL.Func([IDL.Text], [], []),
   'deleteProduct' : IDL.Func([IDL.Text], [], []),
   'getAllCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
   'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
   'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
-  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getOrdersByUser' : IDL.Func([], [IDL.Vec(Order)], ['query']),
   'getProductById' : IDL.Func([IDL.Text], [IDL.Opt(Product)], ['query']),
   'getProductsByCategory' : IDL.Func([IDL.Text], [IDL.Vec(Product)], ['query']),
-  'getProductsSortedByPrice' : IDL.Func(
-      [],
-      [IDL.Vec(IDL.Tuple(IDL.Text, Product))],
-      ['query'],
-    ),
-  'getProductsSortedByStock' : IDL.Func(
-      [],
-      [IDL.Vec(IDL.Tuple(IDL.Text, Product))],
-      ['query'],
-    ),
-  'getUserProfile' : IDL.Func(
-      [IDL.Principal],
-      [IDL.Opt(UserProfile)],
-      ['query'],
-    ),
+  'getProductsSortedByPrice' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+  'getProductsSortedByStock' : IDL.Func([], [IDL.Vec(Product)], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'placeOrder' : IDL.Func(
       [
@@ -130,11 +111,10 @@ export const idlService = IDL.Service({
         IDL.Variant({ 'COD' : IDL.Null, 'GPay' : IDL.Null }),
         IDL.Nat,
       ],
-      [],
+      [IDL.Text],
       [],
     ),
   'reorder' : IDL.Func([IDL.Text], [], []),
-  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'updateCategory' : IDL.Func([Category], [], []),
   'updateOrderAddress' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   'updateOrderPayment' : IDL.Func(
@@ -179,8 +159,8 @@ export const idlFactory = ({ IDL }) => {
     'sizes' : IDL.Vec(IDL.Text),
     'stock' : IDL.Nat,
     'category' : IDL.Text,
-    'image' : ExternalBlob,
     'price' : IDL.Nat,
+    'images' : IDL.Vec(ExternalBlob),
   });
   const OrderItem = IDL.Record({
     'size' : IDL.Text,
@@ -197,12 +177,6 @@ export const idlFactory = ({ IDL }) => {
     'address' : IDL.Text,
     'phone' : IDL.Text,
     'items' : IDL.Vec(OrderItem),
-  });
-  const UserProfile = IDL.Record({
-    'name' : IDL.Text,
-    'email' : IDL.Text,
-    'address' : IDL.Text,
-    'phone' : IDL.Text,
   });
   
   return IDL.Service({
@@ -238,11 +212,11 @@ export const idlFactory = ({ IDL }) => {
     'createCategory' : IDL.Func([Category], [], []),
     'createProduct' : IDL.Func([Product], [], []),
     'deleteCategory' : IDL.Func([IDL.Text], [], []),
+    'deleteOrder' : IDL.Func([IDL.Text], [], []),
     'deleteProduct' : IDL.Func([IDL.Text], [], []),
     'getAllCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
     'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
     'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
-    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getOrdersByUser' : IDL.Func([], [IDL.Vec(Order)], ['query']),
     'getProductById' : IDL.Func([IDL.Text], [IDL.Opt(Product)], ['query']),
@@ -251,21 +225,8 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(Product)],
         ['query'],
       ),
-    'getProductsSortedByPrice' : IDL.Func(
-        [],
-        [IDL.Vec(IDL.Tuple(IDL.Text, Product))],
-        ['query'],
-      ),
-    'getProductsSortedByStock' : IDL.Func(
-        [],
-        [IDL.Vec(IDL.Tuple(IDL.Text, Product))],
-        ['query'],
-      ),
-    'getUserProfile' : IDL.Func(
-        [IDL.Principal],
-        [IDL.Opt(UserProfile)],
-        ['query'],
-      ),
+    'getProductsSortedByPrice' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+    'getProductsSortedByStock' : IDL.Func([], [IDL.Vec(Product)], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'placeOrder' : IDL.Func(
         [
@@ -275,11 +236,10 @@ export const idlFactory = ({ IDL }) => {
           IDL.Variant({ 'COD' : IDL.Null, 'GPay' : IDL.Null }),
           IDL.Nat,
         ],
-        [],
+        [IDL.Text],
         [],
       ),
     'reorder' : IDL.Func([IDL.Text], [], []),
-    'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'updateCategory' : IDL.Func([Category], [], []),
     'updateOrderAddress' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'updateOrderPayment' : IDL.Func(

@@ -17,6 +17,7 @@ export default function ProductDetail({ productId }: Props) {
   const [selectedSize, setSelectedSize] = useState("");
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [activeImg, setActiveImg] = useState(0);
 
   useEffect(() => {
     if (!actor || !productId) return;
@@ -32,11 +33,12 @@ export default function ProductDetail({ productId }: Props) {
 
   const handleAddToCart = () => {
     if (!product || !selectedSize) return;
+    const imgUrl = product.images?.[0]?.getDirectURL?.() || "";
     addItem({
       id: product.id,
       name: product.name,
       price: product.price,
-      imageUrl: product.image?.getDirectURL?.() || "",
+      imageUrl: imgUrl,
       size: selectedSize,
       quantity: qty,
     });
@@ -76,7 +78,8 @@ export default function ProductDetail({ productId }: Props) {
       </div>
     );
 
-  const imgUrl = product.image?.getDirectURL?.() || "";
+  const images = product.images || [];
+  const imgUrl = images[activeImg]?.getDirectURL?.() || "";
   const priceINR = Number(product.price) / 100;
 
   return (
@@ -93,20 +96,46 @@ export default function ProductDetail({ productId }: Props) {
         </button>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-          {/* Image */}
-          <div className="glass-card overflow-hidden aspect-[3/4]">
-            {imgUrl ? (
-              <img
-                src={imgUrl}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div
-                className="w-full h-full flex items-center justify-center text-6xl"
-                style={{ background: "rgba(212,175,55,0.05)" }}
-              >
-                👔
+          {/* Image Gallery */}
+          <div>
+            <div className="glass-card overflow-hidden aspect-[3/4] mb-3">
+              {imgUrl ? (
+                <img
+                  src={imgUrl}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center text-6xl"
+                  style={{ background: "rgba(212,175,55,0.05)" }}
+                >
+                  👔
+                </div>
+              )}
+            </div>
+            {images.length > 1 && (
+              <div className="flex gap-2 flex-wrap">
+                {images.map((img, i) => (
+                  <button
+                    key={img.getDirectURL()}
+                    type="button"
+                    onClick={() => setActiveImg(i)}
+                    className="w-16 h-20 overflow-hidden rounded-lg transition-all"
+                    style={{
+                      border:
+                        activeImg === i
+                          ? "2px solid #D4AF37"
+                          : "2px solid rgba(212,175,55,0.2)",
+                    }}
+                  >
+                    <img
+                      src={img.getDirectURL()}
+                      alt={`${product.name} ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
               </div>
             )}
           </div>

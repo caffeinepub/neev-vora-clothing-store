@@ -60,10 +60,18 @@ const cornerKeys = ["tl", "tr", "bl", "br"];
 export default function OrderConfirmation() {
   const [voucherCode] = useState(generateVoucherCode);
   const [customerName, setCustomerName] = useState("");
+  const [orderId, setOrderId] = useState("");
+  const [orderTotal, setOrderTotal] = useState("");
 
   useEffect(() => {
-    const stored = localStorage.getItem("me_customer_name") || "";
-    setCustomerName(stored);
+    setCustomerName(localStorage.getItem("me_customer_name") || "");
+    const rawId = localStorage.getItem("me_last_order_id") || "";
+    setOrderId(rawId ? rawId.slice(0, 12).toUpperCase() : "");
+    const rawTotal = localStorage.getItem("me_last_order_total") || "";
+    if (rawTotal) {
+      const totalINR = Number(rawTotal) / 100;
+      setOrderTotal(`₹${totalINR.toLocaleString("en-IN")}`);
+    }
   }, []);
 
   return (
@@ -205,6 +213,31 @@ export default function OrderConfirmation() {
             />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            {orderId && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{ color: GOLD_DIM, fontSize: 12, fontWeight: 600 }}
+                >
+                  Order ID:
+                </span>
+                <span
+                  style={{
+                    color: GOLD,
+                    fontWeight: 700,
+                    fontSize: 12,
+                    letterSpacing: "0.1em",
+                  }}
+                >
+                  #{orderId}
+                </span>
+              </div>
+            )}
             <div
               style={{
                 display: "flex",
@@ -264,7 +297,9 @@ export default function OrderConfirmation() {
             >
               <span style={{ color: GOLD_DIM, fontSize: 12, fontWeight: 600 }}>
                 Purchase Amount:{" "}
-                <span style={{ color: "#fff" }}>₹ ________</span>
+                <span style={{ color: "#fff" }}>
+                  {orderTotal || "₹ ________"}
+                </span>
               </span>
               <span style={{ color: GOLD_DIM, fontSize: 12, fontWeight: 600 }}>
                 Voucher Value:{" "}

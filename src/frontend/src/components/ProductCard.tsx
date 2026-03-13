@@ -9,7 +9,7 @@ interface Props {
 
 export default function ProductCard({ product }: Props) {
   const { addItem } = useCart();
-  const imgUrl = product.image?.getDirectURL?.() || "";
+  const imgUrl = product.images?.[0]?.getDirectURL?.() || "";
   const priceINR = Number(product.price) / 100;
 
   const handleAddToCart = (e: React.MouseEvent) => {

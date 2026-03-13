@@ -39,12 +39,12 @@ export default function Footer() {
           </p>
           <a
             data-ocid="footer.email.link"
-            href="mailto:support@meetenterprise.com"
+            href="mailto:meetenterprise654@gmail.com"
             className="flex items-center gap-2 text-sm hover:opacity-80 transition-opacity"
             style={{ color: "rgba(212,175,55,0.7)" }}
           >
             <Mail size={14} />
-            support@meetenterprise.com
+            meetenterprise654@gmail.com
           </a>
         </div>
 
@@ -78,11 +78,11 @@ export default function Footer() {
             <li>
               <a
                 data-ocid="footer.support-email.link"
-                href="mailto:support@meetenterprise.com"
+                href="mailto:meetenterprise654@gmail.com"
                 className="text-sm hover:opacity-80 tracking-wider transition-opacity"
                 style={{ color: "rgba(212,175,55,0.75)" }}
               >
-                support@meetenterprise.com
+                meetenterprise654@gmail.com
               </a>
             </li>
           </ul>

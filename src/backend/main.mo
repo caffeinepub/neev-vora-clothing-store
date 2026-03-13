@@ -1,18 +1,20 @@
 import Time "mo:core/Time";
 import Map "mo:core/Map";
-import Nat "mo:core/Nat";
 import Text "mo:core/Text";
-import List "mo:core/List";
-import Array "mo:core/Array";
 import Principal "mo:core/Principal";
+import Nat "mo:core/Nat";
+import Runtime "mo:core/Runtime";
 import Storage "blob-storage/Storage";
 import MixinStorage "blob-storage/Mixin";
-import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
-actor {
-  let accessControlState = AccessControl.initState();
-  include MixinAuthorization(accessControlState);
+(with migration =
+  // Discard old accessControlState stable variable from previous version
+  func (old : { accessControlState : AccessControl.AccessControlState }) : {} {
+    {}
+  }
+)
+persistent actor {
   include MixinStorage();
 
   public type Category = {
@@ -26,17 +28,17 @@ actor {
     name : Text;
     description : Text;
     price : Nat;
+    stock : Nat;
     category : Text;
     sizes : [Text];
-    image : Storage.ExternalBlob;
-    stock : Nat;
+    images : [Storage.ExternalBlob];
     createdAt : Int;
   };
 
   public type OrderItem = {
     productId : Text;
-    size : Text;
     quantity : Nat;
+    size : Text;
   };
 
   public type Order = {
@@ -57,8 +59,8 @@ actor {
   public type UserProfile = {
     name : Text;
     email : Text;
-    phone : Text;
     address : Text;
+    phone : Text;
   };
 
   let categories = Map.empty<Text, Category>();
@@ -66,98 +68,63 @@ actor {
   let orders = Map.empty<Text, Order>();
   let userProfiles = Map.empty<Principal, UserProfile>();
 
-  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      return;
-    };
-    userProfiles.add(caller, profile);
-  };
-
-  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      return null;
-    };
-    userProfiles.get(caller);
-  };
-
-  public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
-    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
-      return null;
-    };
-    userProfiles.get(user);
-  };
-
-  public shared ({ caller }) func createCategory(category : Category) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) { return };
-    categories.add(category.id, category);
-  };
-
-  public shared ({ caller }) func updateCategory(category : Category) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) { return };
-    categories.add(category.id, category);
-  };
-
-  public shared ({ caller }) func deleteCategory(id : Text) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) { return };
-    categories.remove(id);
-  };
-
   public query func getAllCategories() : async [Category] {
     categories.values().toArray();
-  };
-
-  public shared ({ caller }) func createProduct(product : Product) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) { return };
-    products.add(product.id, product);
-  };
-
-  public shared ({ caller }) func updateProduct(product : Product) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) { return };
-    products.add(product.id, product);
-  };
-
-  public shared ({ caller }) func deleteProduct(id : Text) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) { return };
-    products.remove(id);
   };
 
   public query func getAllProducts() : async [Product] {
     products.values().toArray();
   };
 
-  public query func getProductsByCategory(categoryId : Text) : async [Product] {
-    let filteredProducts = products.entries().toArray().filter(
-      func((_, prod)) {
-        prod.category == categoryId;
-      }
-    ).map(
-      func((_, prod)) { prod }
-    );
-    filteredProducts;
+  public shared func createCategory(category : Category) : async () {
+    categories.add(category.id, category);
   };
 
-  public shared ({ caller }) func bulkDeleteProducts(ids : [Text]) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) { return };
-    for (id in ids.values()) {
+  public shared func updateCategory(category : Category) : async () {
+    categories.add(category.id, category);
+  };
+
+  public shared func deleteCategory(id : Text) : async () {
+    categories.remove(id);
+  };
+
+  public query func getProductById(productId : Text) : async ?Product {
+    products.get(productId);
+  };
+
+  public shared func createProduct(product : Product) : async () {
+    products.add(product.id, product);
+  };
+
+  public shared func updateProduct(product : Product) : async () {
+    products.add(product.id, product);
+  };
+
+  public shared func deleteProduct(productId : Text) : async () {
+    products.remove(productId);
+  };
+
+  public shared func bulkDeleteProducts(productIds : [Text]) : async () {
+    for (id in productIds.values()) {
       products.remove(id);
     };
   };
 
-  public query func getProductById(id : Text) : async ?Product {
-    products.get(id);
+  public query func getProductsByCategory(categoryId : Text) : async [Product] {
+    let productArray = products.values().toArray();
+    productArray.filter(func(prod) { prod.category == categoryId });
   };
 
-  public query func getProductsSortedByPrice() : async [(Text, Product)] {
-    products.toArray();
+  public query func getProductsSortedByPrice() : async [Product] {
+    products.values().toArray();
   };
 
-  public query func getProductsSortedByStock() : async [(Text, Product)] {
-    products.toArray();
+  public query func getProductsSortedByStock() : async [Product] {
+    products.values().toArray();
   };
 
-  public shared ({ caller }) func placeOrder(items : [OrderItem], address : Text, phone : Text, paymentMethod : { #COD; #GPay }, total : Nat) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) { return };
-    let orderId = "order-" # orders.size().toText();
+  public shared ({ caller }) func placeOrder(items : [OrderItem], address : Text, phone : Text, paymentMethod : { #COD; #GPay }, total : Nat) : async (Text) {
+    let orderId = "order-" # orders.size().toText() # "-" # (Time.now() % 1000000).toText();
     let newOrder : Order = {
       id = orderId;
       userId = caller;
@@ -170,34 +137,10 @@ actor {
       createdAt = Time.now();
     };
     orders.add(orderId, newOrder);
+    orderId;
   };
 
-  public query ({ caller }) func getOrdersByUser() : async [Order] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      return [];
-    };
-    let filteredOrders = orders.entries().toArray().filter(
-      func((_, order)) {
-        order.userId == caller
-      }
-    ).map(
-      func((_, order)) {
-        order
-      }
-    );
-    filteredOrders;
-  };
-
-  public query ({ caller }) func getAllOrders() : async [Order] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      return [];
-    };
-    let ordersArray = orders.toArray();
-    ordersArray.map(func((_, v)) { v });
-  };
-
-  public shared ({ caller }) func updateOrderStatus(orderId : Text, status : Text) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) { return };
+  public shared func updateOrderStatus(orderId : Text, status : Text) : async () {
     switch (orders.get(orderId)) {
       case (?order) {
         let updatedOrder = {
@@ -217,67 +160,25 @@ actor {
     };
   };
 
-  public shared ({ caller }) func reorder(orderId : Text) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) { return };
-    switch (orders.get(orderId)) {
-      case (?order) {
-        let newOrderId = "order-" # Time.now().toText();
-        let newOrder : Order = {
-          id = newOrderId;
-          userId = order.userId;
-          items = order.items;
-          address = order.address;
-          phone = order.phone;
-          paymentMethod = order.paymentMethod;
-          total = order.total;
-          status = "pending";
-          createdAt = Time.now();
-        };
-        orders.add(newOrderId, newOrder);
-      };
-      case (null) { Runtime.trap("Order not found"); };
-    };
+  public query func getAllOrders() : async [Order] {
+    orders.values().toArray();
   };
 
-  public shared ({ caller }) func updateOrderAddress(orderId : Text, address : Text, phone : Text) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) { return };
-    switch (orders.get(orderId)) {
-      case (?order) {
-        let updatedOrder = {
-          id = order.id;
-          userId = order.userId;
-          items = order.items;
-          address;
-          phone;
-          paymentMethod = order.paymentMethod;
-          total = order.total;
-          status = order.status;
-          createdAt = order.createdAt;
-        };
-        orders.add(orderId, updatedOrder);
-      };
-      case (null) { Runtime.trap("Order not found"); };
-    };
+  public query ({ caller }) func getOrdersByUser() : async [Order] {
+    let ordersArray = orders.values().toArray();
+    ordersArray.filter(func(order) { order.userId == caller });
   };
 
-  public shared ({ caller }) func updateOrderPayment(orderId : Text, paymentMethod : { #COD; #GPay }) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) { return };
-    switch (orders.get(orderId)) {
-      case (?order) {
-        let updatedOrder = {
-          id = order.id;
-          userId = order.userId;
-          items = order.items;
-          address = order.address;
-          phone = order.phone;
-          paymentMethod;
-          total = order.total;
-          status = order.status;
-          createdAt = order.createdAt;
-        };
-        orders.add(orderId, updatedOrder);
-      };
-      case (null) { Runtime.trap("Order not found"); };
-    };
+  public shared func deleteOrder(orderId : Text) : async () {
+    orders.remove(orderId);
+  };
+
+  public shared ({ caller }) func saveUserProfile(name : Text, email : Text, address : Text, phone : Text) : async () {
+    let profile : UserProfile = { name; email; address; phone };
+    userProfiles.add(caller, profile);
+  };
+
+  public query ({ caller }) func getUserProfile() : async ?UserProfile {
+    userProfiles.get(caller);
   };
 };

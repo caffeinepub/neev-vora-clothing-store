@@ -12,15 +12,15 @@ const faqs = [
   },
   {
     q: "How do I track my order?",
-    a: "Once your order is placed, you will receive an order confirmation. For tracking updates, please contact our support team at support@meetenterprise.com.",
+    a: "Once your order is placed, you will receive an order confirmation. For tracking updates, please contact our support team at meetenterprise654@gmail.com.",
   },
   {
     q: "What is the return policy?",
-    a: "We accept returns within 7 days of delivery for items in original, unworn condition with tags intact. Please contact support@meetenterprise.com to initiate a return.",
+    a: "We accept returns within 7 days of delivery for items in original, unworn condition with tags intact. Please contact meetenterprise654@gmail.com to initiate a return.",
   },
   {
     q: "How do I contact support?",
-    a: "Email us at support@meetenterprise.com. Our team is available to help you with any questions or concerns.",
+    a: "Email us at meetenterprise654@gmail.com. Our team is available to help you with any questions or concerns.",
   },
 ];
 
@@ -119,11 +119,11 @@ export default function Support() {
           </p>
           <a
             data-ocid="support.email.link"
-            href="mailto:support@meetenterprise.com"
+            href="mailto:meetenterprise654@gmail.com"
             className="text-base font-bold tracking-wider hover:opacity-80 transition-opacity"
             style={{ color: "#D4AF37" }}
           >
-            support@meetenterprise.com
+            meetenterprise654@gmail.com
           </a>
         </section>
       </div>

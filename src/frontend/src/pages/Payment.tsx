@@ -21,7 +21,7 @@ export default function Payment() {
 
   const handleConfirm = async () => {
     if (!actor) {
-      setError("Please login to place order");
+      setError("Unable to connect. Please try again.");
       return;
     }
     setLoading(true);
@@ -33,13 +33,17 @@ export default function Payment() {
         quantity: BigInt(i.quantity),
       }));
       const fullAddress = `${checkoutData.address}, ${checkoutData.city} - ${checkoutData.pincode}`;
-      await actor.placeOrder(
+      const orderId = await actor.placeOrder(
         orderItems,
         fullAddress,
         checkoutData.phone,
         method === "COD" ? Variant_COD_GPay.COD : Variant_COD_GPay.GPay,
         totalPrice,
       );
+      // Store order info for confirmation page
+      localStorage.setItem("me_last_order_id", orderId);
+      localStorage.setItem("me_last_order_total", String(Number(totalPrice)));
+      localStorage.setItem("me_customer_name", checkoutData.name || "");
       clearCart();
       navigate("order-confirmation");
     } catch (e) {
@@ -125,7 +129,7 @@ export default function Payment() {
               SCAN TO PAY
             </p>
             <a
-              href="upi://pay?pa=voraneev2828@okhdfcbank&pn=Neev+Vora"
+              href="upi://pay?pa=voraneev2828@okhdfcbank&pn=Meet+Enterprise"
               className="block"
             >
               <img

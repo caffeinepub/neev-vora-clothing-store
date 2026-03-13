@@ -41,14 +41,8 @@ export interface Product {
   'sizes' : Array<string>,
   'stock' : bigint,
   'category' : string,
-  'image' : ExternalBlob,
   'price' : bigint,
-}
-export interface UserProfile {
-  'name' : string,
-  'email' : string,
-  'address' : string,
-  'phone' : string,
+  'images' : Array<ExternalBlob>,
 }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
@@ -86,18 +80,17 @@ export interface _SERVICE {
   'createCategory' : ActorMethod<[Category], undefined>,
   'createProduct' : ActorMethod<[Product], undefined>,
   'deleteCategory' : ActorMethod<[string], undefined>,
+  'deleteOrder' : ActorMethod<[string], undefined>,
   'deleteProduct' : ActorMethod<[string], undefined>,
   'getAllCategories' : ActorMethod<[], Array<Category>>,
   'getAllOrders' : ActorMethod<[], Array<Order>>,
   'getAllProducts' : ActorMethod<[], Array<Product>>,
-  'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getOrdersByUser' : ActorMethod<[], Array<Order>>,
   'getProductById' : ActorMethod<[string], [] | [Product]>,
   'getProductsByCategory' : ActorMethod<[string], Array<Product>>,
-  'getProductsSortedByPrice' : ActorMethod<[], Array<[string, Product]>>,
-  'getProductsSortedByStock' : ActorMethod<[], Array<[string, Product]>>,
-  'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'getProductsSortedByPrice' : ActorMethod<[], Array<Product>>,
+  'getProductsSortedByStock' : ActorMethod<[], Array<Product>>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'placeOrder' : ActorMethod<
     [
@@ -108,10 +101,9 @@ export interface _SERVICE {
         { 'GPay' : null },
       bigint,
     ],
-    undefined
+    string
   >,
   'reorder' : ActorMethod<[string], undefined>,
-  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'updateCategory' : ActorMethod<[Category], undefined>,
   'updateOrderAddress' : ActorMethod<[string, string, string], undefined>,
   'updateOrderPayment' : ActorMethod<

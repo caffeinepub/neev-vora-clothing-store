@@ -2,6 +2,7 @@ import {
   Check,
   Edit3,
   Fingerprint,
+  ImagePlus,
   KeyRound,
   Package,
   Plus,
@@ -26,7 +27,6 @@ interface ProductForm {
   price: string;
   category: string;
   sizes: string;
-  imageUrl: string;
   stock: string;
 }
 
@@ -36,7 +36,6 @@ const emptyProductForm: ProductForm = {
   price: "",
   category: "",
   sizes: "S,M,L,XL",
-  imageUrl: "",
   stock: "10",
 };
 
@@ -109,9 +108,14 @@ export default function AdminPanel() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkCsvMode, setBulkCsvMode] = useState(false);
   const [csvText, setCsvText] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Category form
   const [showCatModal, setShowCatModal] = useState(false);
@@ -142,14 +146,14 @@ export default function AdminPanel() {
 
   const handlePin = (idx: number, val: string) => {
     if (!/^\d?$/.test(val)) return;
-    const newPin = [...pin];
-    newPin[idx] = val;
-    setPin(newPin);
+    const next = [...pin];
+    next[idx] = val;
+    setPin(next);
     setPinError(false);
     if (val && idx < 3) pinRefs[idx + 1]?.current?.focus();
-    if (newPin.every((d) => d !== "") && newPin.join("") === getAdminPin()) {
+    if (next.every((d) => d !== "") && next.join("") === getAdminPin()) {
       setUnlocked(true);
-    } else if (newPin.every((d) => d !== "")) {
+    } else if (next.every((d) => d !== "")) {
       setPinError(true);
       setTimeout(() => {
         setPin(["", "", "", ""]);
@@ -198,8 +202,23 @@ export default function AdminPanel() {
     setConfirmPin("");
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setSelectedFiles((prev) => [...prev, ...files]);
+  };
+
+  const removeSelectedFile = (idx: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const removeExistingImage = (idx: number) => {
+    setExistingImageUrls((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const handleSaveProduct = async () => {
     if (!actor) return;
+    setUploading(true);
+    setUploadProgress(0);
     try {
       const price = BigInt(
         Math.round(Number.parseFloat(productForm.price) * 100),
@@ -209,11 +228,34 @@ export default function AdminPanel() {
         .map((s) => s.trim())
         .filter(Boolean);
       const stock = BigInt(Number.parseInt(productForm.stock) || 0);
-      const image = ExternalBlob.fromURL(
-        productForm.imageUrl ||
-          "https://placehold.co/400x500/000/D4AF37?text=No+Image",
-      );
       const now = BigInt(Date.now()) * 1_000_000n;
+
+      // Build images array: existing + new uploads
+      const images: ExternalBlob[] = existingImageUrls.map((url) =>
+        ExternalBlob.fromURL(url),
+      );
+
+      const totalFiles = selectedFiles.length;
+      for (let i = 0; i < totalFiles; i++) {
+        const file = selectedFiles[i];
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const blob = ExternalBlob.fromBytes(bytes).withUploadProgress((pct) => {
+          setUploadProgress(
+            Math.round((i / totalFiles + pct / 100 / totalFiles) * 100),
+          );
+        });
+        images.push(blob);
+      }
+
+      if (images.length === 0) {
+        // Provide a placeholder if no images
+        images.push(
+          ExternalBlob.fromURL(
+            "https://placehold.co/400x500/000/D4AF37?text=No+Image",
+          ),
+        );
+      }
+
       if (editProduct) {
         await actor.updateProduct({
           ...editProduct,
@@ -222,7 +264,7 @@ export default function AdminPanel() {
           price,
           category: productForm.category,
           sizes,
-          image,
+          images,
           stock,
         });
       } else {
@@ -233,7 +275,7 @@ export default function AdminPanel() {
           price,
           category: productForm.category,
           sizes,
-          image,
+          images,
           stock,
           createdAt: now,
         });
@@ -241,9 +283,14 @@ export default function AdminPanel() {
       setShowProductModal(false);
       setEditProduct(null);
       setProductForm(emptyProductForm);
+      setSelectedFiles([]);
+      setExistingImageUrls([]);
       loadData();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Error saving product");
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -290,9 +337,12 @@ export default function AdminPanel() {
           price: BigInt(Math.round(Number.parseFloat(priceStr || "0") * 100)),
           category: category || "",
           sizes: (sizesStr || "M").split("/"),
-          image: ExternalBlob.fromURL(
-            imageUrl || "https://placehold.co/400x500/000/D4AF37?text=No+Image",
-          ),
+          images: [
+            ExternalBlob.fromURL(
+              imageUrl ||
+                "https://placehold.co/400x500/000/D4AF37?text=No+Image",
+            ),
+          ],
           stock: BigInt(Number.parseInt(stockStr || "10")),
           createdAt: BigInt(Date.now()) * 1_000_000n,
         });
@@ -585,6 +635,8 @@ export default function AdminPanel() {
                 onClick={() => {
                   setEditProduct(null);
                   setProductForm(emptyProductForm);
+                  setSelectedFiles([]);
+                  setExistingImageUrls([]);
                   setBulkCsvMode(false);
                   setShowProductModal(true);
                 }}
@@ -703,9 +755,9 @@ export default function AdminPanel() {
                         </td>
                         <td className="p-3">
                           <div className="w-12 h-14 rounded overflow-hidden">
-                            {p.image?.getDirectURL?.() ? (
+                            {p.images?.[0]?.getDirectURL?.() ? (
                               <img
-                                src={p.image.getDirectURL()}
+                                src={p.images[0].getDirectURL()}
                                 alt={p.name}
                                 className="w-full h-full object-cover"
                               />
@@ -749,13 +801,18 @@ export default function AdminPanel() {
                               onClick={() => {
                                 setEditProduct(p);
                                 setBulkCsvMode(false);
+                                setSelectedFiles([]);
+                                setExistingImageUrls(
+                                  (p.images || []).map((img) =>
+                                    img.getDirectURL(),
+                                  ),
+                                );
                                 setProductForm({
                                   name: p.name,
                                   description: p.description,
                                   price: (Number(p.price) / 100).toString(),
                                   category: p.category,
                                   sizes: p.sizes.join(","),
-                                  imageUrl: p.image?.getDirectURL?.() || "",
                                   stock: p.stock?.toString() || "0",
                                 });
                                 setShowProductModal(true);
@@ -996,6 +1053,24 @@ export default function AdminPanel() {
                               >
                                 <X size={12} /> Cancel
                               </button>
+                              <button
+                                type="button"
+                                data-ocid={`admin.order.delete_button.${i + 1}`}
+                                onClick={async () => {
+                                  if (confirm("Delete this order?")) {
+                                    await actor?.deleteOrder(o.id);
+                                    loadData();
+                                  }
+                                }}
+                                className="px-3 py-1 rounded text-xs font-bold flex items-center gap-1"
+                                style={{
+                                  background: "rgba(107,114,128,0.15)",
+                                  color: "#9ca3af",
+                                  border: "1px solid rgba(107,114,128,0.3)",
+                                }}
+                              >
+                                <Trash2 size={12} /> Delete
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -1076,6 +1151,7 @@ export default function AdminPanel() {
               </div>
             ) : (
               <div className="space-y-4">
+                {/* Product fields */}
                 {(
                   [
                     {
@@ -1102,11 +1178,6 @@ export default function AdminPanel() {
                       key: "sizes",
                       label: "SIZES (comma-separated)",
                       placeholder: "S,M,L,XL",
-                    },
-                    {
-                      key: "imageUrl",
-                      label: "IMAGE URL",
-                      placeholder: "https://...",
                     },
                     { key: "stock", label: "STOCK", placeholder: "10" },
                   ] as {
@@ -1138,14 +1209,141 @@ export default function AdminPanel() {
                     />
                   </div>
                 ))}
+
+                {/* Image Upload */}
+                <div>
+                  <label
+                    htmlFor="admin-product-images"
+                    className="text-xs tracking-wider mb-2 block"
+                    style={{ color: "rgba(212,175,55,0.6)" }}
+                  >
+                    PRODUCT IMAGES
+                  </label>
+
+                  {/* Existing images (when editing) */}
+                  {existingImageUrls.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {existingImageUrls.map((url, idx) => (
+                        <div
+                          key={url}
+                          className="relative w-16 h-20 rounded overflow-hidden"
+                          style={{ border: "1px solid rgba(212,175,55,0.4)" }}
+                        >
+                          <img
+                            src={url}
+                            alt={`Preview ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeExistingImage(idx)}
+                            className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-xs"
+                            style={{
+                              background: "rgba(239,68,68,0.9)",
+                              color: "#fff",
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* New file previews */}
+                  {selectedFiles.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {selectedFiles.map((file, idx) => (
+                        <div
+                          key={`${file.name}-${idx}`}
+                          className="relative w-16 h-20 rounded overflow-hidden"
+                          style={{ border: "1px solid rgba(212,175,55,0.6)" }}
+                        >
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeSelectedFile(idx)}
+                            className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-xs"
+                            style={{
+                              background: "rgba(239,68,68,0.9)",
+                              color: "#fff",
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload button */}
+                  <input
+                    ref={fileInputRef}
+                    id="admin-product-images"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <button
+                    type="button"
+                    data-ocid="admin.product.upload_button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-3 text-sm tracking-wider flex items-center justify-center gap-2 rounded-lg border-dashed"
+                    style={{
+                      border: "2px dashed rgba(212,175,55,0.4)",
+                      color: "rgba(212,175,55,0.7)",
+                      background: "rgba(212,175,55,0.03)",
+                    }}
+                  >
+                    <ImagePlus size={16} /> Upload Images
+                  </button>
+                  <p
+                    className="text-xs mt-1"
+                    style={{ color: "rgba(212,175,55,0.4)" }}
+                  >
+                    Select multiple images from your device
+                  </p>
+                </div>
+
+                {/* Upload Progress */}
+                {uploading && (
+                  <div>
+                    <div
+                      className="w-full h-2 rounded-full overflow-hidden"
+                      style={{ background: "rgba(212,175,55,0.15)" }}
+                    >
+                      <div
+                        className="h-full transition-all duration-300"
+                        style={{
+                          width: `${uploadProgress}%`,
+                          background: "#D4AF37",
+                        }}
+                      />
+                    </div>
+                    <p
+                      className="text-xs mt-1 text-center"
+                      style={{ color: "rgba(212,175,55,0.6)" }}
+                    >
+                      Uploading {uploadProgress}%...
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
                     data-ocid="admin.product.save.button"
                     onClick={handleSaveProduct}
-                    className="btn-gold flex-1 py-3 text-sm tracking-wider flex items-center justify-center gap-2"
+                    disabled={uploading}
+                    className="btn-gold flex-1 py-3 text-sm tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    <Check size={16} /> SAVE
+                    <Check size={16} /> {uploading ? "SAVING..." : "SAVE"}
                   </button>
                   <button
                     type="button"

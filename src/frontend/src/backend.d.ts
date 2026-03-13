@@ -35,12 +35,6 @@ export interface Order {
     phone: string;
     items: Array<OrderItem>;
 }
-export interface UserProfile {
-    name: string;
-    email: string;
-    address: string;
-    phone: string;
-}
 export interface Product {
     id: string;
     name: string;
@@ -49,8 +43,8 @@ export interface Product {
     sizes: Array<string>;
     stock: bigint;
     category: string;
-    image: ExternalBlob;
     price: bigint;
+    images: Array<ExternalBlob>;
 }
 export enum UserRole {
     admin = "admin",
@@ -63,26 +57,24 @@ export enum Variant_COD_GPay {
 }
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    bulkDeleteProducts(ids: Array<string>): Promise<void>;
+    bulkDeleteProducts(productIds: Array<string>): Promise<void>;
     createCategory(category: Category): Promise<void>;
     createProduct(product: Product): Promise<void>;
     deleteCategory(id: string): Promise<void>;
-    deleteProduct(id: string): Promise<void>;
+    deleteOrder(orderId: string): Promise<void>;
+    deleteProduct(productId: string): Promise<void>;
     getAllCategories(): Promise<Array<Category>>;
     getAllOrders(): Promise<Array<Order>>;
     getAllProducts(): Promise<Array<Product>>;
-    getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getOrdersByUser(): Promise<Array<Order>>;
-    getProductById(id: string): Promise<Product | null>;
+    getProductById(productId: string): Promise<Product | null>;
     getProductsByCategory(categoryId: string): Promise<Array<Product>>;
-    getProductsSortedByPrice(): Promise<Array<[string, Product]>>;
-    getProductsSortedByStock(): Promise<Array<[string, Product]>>;
-    getUserProfile(user: Principal): Promise<UserProfile | null>;
+    getProductsSortedByPrice(): Promise<Array<Product>>;
+    getProductsSortedByStock(): Promise<Array<Product>>;
     isCallerAdmin(): Promise<boolean>;
-    placeOrder(items: Array<OrderItem>, address: string, phone: string, paymentMethod: Variant_COD_GPay, total: bigint): Promise<void>;
+    placeOrder(items: Array<OrderItem>, address: string, phone: string, paymentMethod: Variant_COD_GPay, total: bigint): Promise<string>;
     reorder(orderId: string): Promise<void>;
-    saveCallerUserProfile(profile: UserProfile): Promise<void>;
     updateCategory(category: Category): Promise<void>;
     updateOrderAddress(orderId: string, address: string, phone: string): Promise<void>;
     updateOrderPayment(orderId: string, paymentMethod: Variant_COD_GPay): Promise<void>;
