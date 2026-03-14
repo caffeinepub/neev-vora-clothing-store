@@ -130,14 +130,23 @@ export default function Payment() {
             </p>
             <a
               href="upi://pay?pa=voraneev2828@okhdfcbank&pn=Meet+Enterprise"
-              className="block"
+              className="block flex justify-center"
             >
-              <img
-                src="/assets/uploads/GooglePay_QR-1.png"
-                alt="GPay QR"
-                className="w-56 h-56 mx-auto rounded-xl object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                style={{ border: "4px solid #D4AF37", borderRadius: "12px" }}
-              />
+              <div
+                style={{
+                  background: "white",
+                  padding: "12px",
+                  borderRadius: "12px",
+                  border: "4px solid #D4AF37",
+                  display: "inline-block",
+                }}
+              >
+                <img
+                  src="/assets/uploads/GooglePay_QR-1.png"
+                  alt="GPay QR"
+                  className="w-48 h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                />
+              </div>
             </a>
             <p
               className="mt-4 text-sm font-bold tracking-wider"
