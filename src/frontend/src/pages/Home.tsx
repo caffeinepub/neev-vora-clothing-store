@@ -6,11 +6,12 @@ import ProductCard from "../components/ProductCard";
 import { useActor } from "../hooks/useActor";
 
 export default function Home() {
-  const { actor } = useActor();
+  const { actor, isFetching: actorLoading } = useActor();
   const [categories, setCategories] = useState<Category[]>([]);
   const [featured, setFeatured] = useState<Product[]>([]);
 
   useEffect(() => {
+    if (actorLoading) return;
     if (!actor) return;
     actor
       .getAllCategories()
@@ -20,7 +21,7 @@ export default function Home() {
       .getAllProducts()
       .then((p) => setFeatured(p.slice(0, 6)))
       .catch(() => {});
-  }, [actor]);
+  }, [actor, actorLoading]);
 
   return (
     <div className="min-h-screen" style={{ background: "#000" }}>

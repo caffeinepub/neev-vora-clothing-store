@@ -5,7 +5,7 @@ import ProductCard from "../components/ProductCard";
 import { useActor } from "../hooks/useActor";
 
 export default function Catalog() {
-  const { actor } = useActor();
+  const { actor, isFetching: actorLoading } = useActor();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,15 +15,19 @@ export default function Catalog() {
   const [maxPrice, setMaxPrice] = useState(100000);
 
   useEffect(() => {
-    if (!actor) return;
+    if (actorLoading) return;
+    if (!actor) {
+      setLoading(false);
+      return;
+    }
     Promise.all([actor.getAllProducts(), actor.getAllCategories()])
       .then(([prods, cats]) => {
         setProducts(prods);
         setCategories(cats);
       })
-      .catch(() => {})
+      .catch(() => setLoading(false))
       .finally(() => setLoading(false));
-  }, [actor]);
+  }, [actor, actorLoading]);
 
   const allSizes = [...new Set(products.flatMap((p) => p.sizes))];
 
