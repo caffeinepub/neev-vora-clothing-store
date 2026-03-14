@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Tag,
   Trash2,
+  Users,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -17,9 +18,119 @@ import type { Category, Order, Product } from "../backend";
 import { ExternalBlob } from "../backend";
 import { useActor } from "../hooks/useActor";
 
+// ─── TagInput Component ───────────────────────────────────────────────────────
+function TagInput({
+  label,
+  placeholder,
+  value,
+  onChange,
+  ocidPrefix,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  ocidPrefix: string;
+}) {
+  const [inputVal, setInputVal] = useState("");
+  const tags = value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const addTag = (raw: string) => {
+    const tag = raw.trim().replace(/,$/, "").trim();
+    if (!tag) return;
+    const next = tags.includes(tag) ? tags : [...tags, tag];
+    onChange(next.join(","));
+    setInputVal("");
+  };
+
+  const removeTag = (idx: number) => {
+    const next = tags.filter((_, i) => i !== idx);
+    onChange(next.join(","));
+  };
+
+  const inputId = `tag-input-${ocidPrefix}`;
+  return (
+    <div>
+      <label
+        htmlFor={inputId}
+        className="text-xs tracking-wider mb-1 block"
+        style={{ color: "rgba(212,175,55,0.6)" }}
+      >
+        {label}
+      </label>
+      <div
+        className="flex flex-wrap gap-2 p-2 rounded min-h-[42px]"
+        style={{
+          border: "1px solid rgba(212,175,55,0.3)",
+          background: "rgba(212,175,55,0.03)",
+        }}
+      >
+        {tags.map((tag, i) => (
+          <span
+            key={tag}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+            style={{
+              background: "rgba(212,175,55,0.15)",
+              border: "1px solid rgba(212,175,55,0.4)",
+              color: "#D4AF37",
+            }}
+          >
+            {tag}
+            <button
+              type="button"
+              onClick={() => removeTag(i)}
+              className="ml-0.5 hover:opacity-70"
+              style={{ color: "#D4AF37" }}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        <input
+          id={inputId}
+          data-ocid={`${ocidPrefix}.input`}
+          type="text"
+          value={inputVal}
+          onChange={(e) => setInputVal(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === ",") {
+              e.preventDefault();
+              addTag(inputVal);
+            } else if (e.key === "Backspace" && !inputVal && tags.length > 0) {
+              removeTag(tags.length - 1);
+            }
+          }}
+          onBlur={() => {
+            if (inputVal) addTag(inputVal);
+          }}
+          placeholder={tags.length === 0 ? placeholder : ""}
+          className="flex-1 min-w-[120px] bg-transparent text-sm outline-none"
+          style={{ color: "#D4AF37" }}
+        />
+      </div>
+    </div>
+  );
+}
+
 const getAdminPin = () => localStorage.getItem("adminPin") || "2537";
 
-type Tab = "dashboard" | "products" | "categories" | "orders";
+type Tab = "dashboard" | "products" | "categories" | "orders" | "users";
+function getVoucherCode(orderId: string) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "ME-";
+  let hash = 0;
+  for (let i = 0; i < orderId.length; i++) {
+    hash = (hash * 31 + orderId.charCodeAt(i)) >>> 0;
+  }
+  for (let i = 0; i < 8; i++) {
+    hash = (hash * 1664525 + 1013904223) >>> 0;
+    code += chars[hash % chars.length];
+  }
+  return code;
+}
 
 interface ProductForm {
   name: string;
@@ -27,6 +138,7 @@ interface ProductForm {
   price: string;
   category: string;
   sizes: string;
+  colours: string;
   stock: string;
 }
 
@@ -36,6 +148,7 @@ const emptyProductForm: ProductForm = {
   price: "",
   category: "",
   sizes: "S,M,L,XL",
+  colours: "",
   stock: "10",
 };
 
@@ -256,6 +369,8 @@ export default function AdminPanel() {
         );
       }
 
+      const newProductId = editProduct ? editProduct.id : crypto.randomUUID();
+
       if (editProduct) {
         await actor.updateProduct({
           ...editProduct,
@@ -269,7 +384,7 @@ export default function AdminPanel() {
         });
       } else {
         await actor.createProduct({
-          id: crypto.randomUUID(),
+          id: newProductId,
           name: productForm.name,
           description: productForm.description,
           price,
@@ -280,6 +395,10 @@ export default function AdminPanel() {
           createdAt: now,
         });
       }
+      localStorage.setItem(
+        `product-colours-${newProductId}`,
+        productForm.colours,
+      );
       setShowProductModal(false);
       setEditProduct(null);
       setProductForm(emptyProductForm);
@@ -507,28 +626,29 @@ export default function AdminPanel() {
 
         {/* Tabs */}
         <div data-ocid="admin.tabs.panel" className="flex flex-wrap gap-2 mb-8">
-          {(["dashboard", "products", "categories", "orders"] as Tab[]).map(
-            (t) => (
-              <button
-                type="button"
-                key={t}
-                data-ocid={`admin.${t}.tab`}
-                onClick={() => setTab(t)}
-                className="px-6 py-3 text-sm font-bold tracking-wider rounded-lg transition-all flex items-center gap-2"
-                style={{
-                  background: tab === t ? "#D4AF37" : "rgba(212,175,55,0.1)",
-                  color: tab === t ? "#000" : "#D4AF37",
-                  border: "1px solid rgba(212,175,55,0.3)",
-                }}
-              >
-                {t === "dashboard" && <ShoppingBag size={14} />}
-                {t === "products" && <Package size={14} />}
-                {t === "categories" && <Tag size={14} />}
-                {t === "orders" && <ShoppingBag size={14} />}
-                {t.toUpperCase()}
-              </button>
-            ),
-          )}
+          {(
+            ["dashboard", "products", "categories", "orders", "users"] as Tab[]
+          ).map((t) => (
+            <button
+              type="button"
+              key={t}
+              data-ocid={`admin.${t}.tab`}
+              onClick={() => setTab(t)}
+              className="px-6 py-3 text-sm font-bold tracking-wider rounded-lg transition-all flex items-center gap-2"
+              style={{
+                background: tab === t ? "#D4AF37" : "rgba(212,175,55,0.1)",
+                color: tab === t ? "#000" : "#D4AF37",
+                border: "1px solid rgba(212,175,55,0.3)",
+              }}
+            >
+              {t === "dashboard" && <ShoppingBag size={14} />}
+              {t === "products" && <Package size={14} />}
+              {t === "categories" && <Tag size={14} />}
+              {t === "orders" && <ShoppingBag size={14} />}
+              {t === "users" && <Users size={14} />}
+              {t.toUpperCase()}
+            </button>
+          ))}
         </div>
 
         {loading && (
@@ -807,12 +927,17 @@ export default function AdminPanel() {
                                     img.getDirectURL(),
                                   ),
                                 );
+                                const savedColours =
+                                  localStorage.getItem(
+                                    `product-colours-${p.id}`,
+                                  ) || "";
                                 setProductForm({
                                   name: p.name,
                                   description: p.description,
                                   price: (Number(p.price) / 100).toString(),
                                   category: p.category,
                                   sizes: p.sizes.join(","),
+                                  colours: savedColours,
                                   stock: p.stock?.toString() || "0",
                                 });
                                 setShowProductModal(true);
@@ -959,6 +1084,7 @@ export default function AdminPanel() {
                         "Total",
                         "Payment",
                         "Status",
+                        "Voucher",
                         "Actions",
                       ].map((h) => (
                         <th
@@ -1010,6 +1136,30 @@ export default function AdminPanel() {
                             >
                               {o.status}
                             </span>
+                          </td>
+                          <td className="p-3">
+                            {Number(o.total) / 100 >= 1500 ? (
+                              <span
+                                style={{
+                                  color: "#D4AF37",
+                                  fontFamily: "monospace",
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  letterSpacing: "0.1em",
+                                }}
+                              >
+                                {getVoucherCode(o.id)}
+                              </span>
+                            ) : (
+                              <span
+                                style={{
+                                  color: "rgba(212,175,55,0.35)",
+                                  fontSize: 13,
+                                }}
+                              >
+                                &mdash;
+                              </span>
+                            )}
                           </td>
                           <td className="p-3">
                             <div className="flex gap-2">
@@ -1080,6 +1230,101 @@ export default function AdminPanel() {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {tab === "users" && (
+          <div>
+            {(() => {
+              const storedUsers = JSON.parse(
+                localStorage.getItem("me_users") || "[]",
+              );
+              if (storedUsers.length === 0) {
+                return (
+                  <div
+                    data-ocid="admin.users.empty_state"
+                    className="text-center py-16"
+                  >
+                    <Users
+                      size={48}
+                      className="mx-auto mb-4 opacity-30"
+                      style={{ color: "#D4AF37" }}
+                    />
+                    <p style={{ color: "rgba(212,175,55,0.5)" }}>
+                      No registered users yet.
+                    </p>
+                  </div>
+                );
+              }
+              return (
+                <div className="overflow-x-auto">
+                  <table
+                    data-ocid="admin.users.table"
+                    className="w-full text-sm"
+                  >
+                    <thead>
+                      <tr
+                        style={{
+                          borderBottom: "1px solid rgba(212,175,55,0.2)",
+                        }}
+                      >
+                        {["Name", "Phone Number", "WhatsApp Number"].map(
+                          (h) => (
+                            <th
+                              key={h}
+                              className="p-3 text-left text-xs tracking-wider"
+                              style={{ color: "rgba(212,175,55,0.6)" }}
+                            >
+                              {h}
+                            </th>
+                          ),
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {storedUsers.map(
+                        (
+                          u: {
+                            name: string;
+                            contactNumber: string;
+                            whatsappNumber: string;
+                            registeredAt: number;
+                          },
+                          i: number,
+                        ) => (
+                          <tr
+                            key={u.contactNumber}
+                            data-ocid={`admin.user.row.${i + 1}`}
+                            style={{
+                              borderBottom: "1px solid rgba(212,175,55,0.1)",
+                            }}
+                          >
+                            <td
+                              className="p-3 font-bold"
+                              style={{ color: "#D4AF37" }}
+                            >
+                              {u.name}
+                            </td>
+                            <td
+                              className="p-3"
+                              style={{ color: "rgba(212,175,55,0.8)" }}
+                            >
+                              {u.contactNumber}
+                            </td>
+                            <td
+                              className="p-3"
+                              style={{ color: "rgba(212,175,55,0.8)" }}
+                            >
+                              {u.whatsappNumber}
+                            </td>
+                          </tr>
+                        ),
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
@@ -1174,11 +1419,6 @@ export default function AdminPanel() {
                       label: "CATEGORY ID",
                       placeholder: "Category ID",
                     },
-                    {
-                      key: "sizes",
-                      label: "SIZES (comma-separated)",
-                      placeholder: "S,M,L,XL",
-                    },
                     { key: "stock", label: "STOCK", placeholder: "10" },
                   ] as {
                     key: keyof ProductForm;
@@ -1209,6 +1449,26 @@ export default function AdminPanel() {
                     />
                   </div>
                 ))}
+
+                {/* Sizes tag input */}
+                <TagInput
+                  label="SIZES"
+                  placeholder="Add size, press Enter"
+                  value={productForm.sizes}
+                  onChange={(v) => setProductForm((f) => ({ ...f, sizes: v }))}
+                  ocidPrefix="admin.product.sizes"
+                />
+
+                {/* Colours tag input */}
+                <TagInput
+                  label="COLOURS"
+                  placeholder="Add colour, press Enter"
+                  value={productForm.colours}
+                  onChange={(v) =>
+                    setProductForm((f) => ({ ...f, colours: v }))
+                  }
+                  ocidPrefix="admin.product.colours"
+                />
 
                 {/* Image Upload */}
                 <div>

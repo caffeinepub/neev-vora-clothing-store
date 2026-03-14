@@ -120,6 +120,15 @@ export default function Auth() {
     if (!result.success) {
       setLoginError(result.error || "Login failed.");
     } else {
+      const users = JSON.parse(localStorage.getItem("me_users") || "[]");
+      users.push({
+        name: signupData.name,
+        email: signupData.email,
+        contactNumber: signupData.contactNumber,
+        whatsappNumber: signupData.whatsappNumber,
+        registeredAt: Date.now(),
+      });
+      localStorage.setItem("me_users", JSON.stringify(users));
       navigate("");
     }
   };

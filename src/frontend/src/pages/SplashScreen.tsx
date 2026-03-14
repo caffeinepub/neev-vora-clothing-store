@@ -6,7 +6,7 @@ interface Props {
 
 export default function SplashScreen({ onDone }: Props) {
   useEffect(() => {
-    const timer = setTimeout(onDone, 3500);
+    const timer = setTimeout(onDone, 8000);
     return () => clearTimeout(timer);
   }, [onDone]);
 
@@ -18,18 +18,19 @@ export default function SplashScreen({ onDone }: Props) {
       className="fixed inset-0 flex flex-col items-center justify-center cursor-pointer border-0 w-full h-full"
       style={{ background: "#000", zIndex: 9999 }}
     >
-      <div className="relative w-full max-w-xs sm:max-w-sm">
-        <img
-          src="/assets/uploads/dqtdbsyn59rmt0cwr9ar9fazp0_result_-2.gif"
-          alt="Meet Enterprise"
-          className="w-full h-auto"
-        />
-      </div>
+      <img
+        src="/assets/uploads/1781-photoaidcom-cropped.jpg-1.png"
+        alt="Meet Enterprise"
+        style={{ width: "280px", height: "auto", objectFit: "contain" }}
+      />
       <p
-        className="mt-6 text-xs tracking-[0.4em] font-light"
+        className="text-xs tracking-[0.4em] font-light animate-pulse"
         style={{
-          color: "rgba(212,175,55,0.5)",
+          color: "rgba(212,175,55,0.85)",
           fontFamily: "Montserrat, sans-serif",
+          position: "absolute",
+          bottom: "2rem",
+          letterSpacing: "0.4em",
         }}
       >
         TAP TO ENTER

@@ -42,22 +42,43 @@ export default function Home() {
           }}
         />
         <div className="relative z-10">
+          <div className="flex items-center justify-center gap-8 mb-6">
+            <img
+              src="/assets/uploads/1781-photoaidcom-cropped.jpg-1.png"
+              alt="Meet Enterprise Logo"
+              style={{
+                width: "140px",
+                height: "140px",
+                borderRadius: "50%",
+                objectFit: "cover",
+                border: "2px solid rgba(212,175,55,0.5)",
+              }}
+            />
+            <div
+              style={{
+                width: "1px",
+                height: "80px",
+                background: "rgba(212,175,55,0.4)",
+              }}
+            />
+            <img
+              src="/assets/uploads/cropped_circle_image-1.png"
+              alt="Navkar Fashion Logo"
+              style={{
+                width: "140px",
+                height: "140px",
+                borderRadius: "50%",
+                objectFit: "cover",
+                border: "2px solid rgba(212,175,55,0.5)",
+              }}
+            />
+          </div>
           <p
             className="text-xs tracking-[0.5em] mb-4 font-medium"
             style={{ color: "rgba(212,175,55,0.7)" }}
           >
             LUXURY FASHION FOR MEN &amp; CHILDREN
           </p>
-          <h1
-            className="text-5xl sm:text-7xl font-black tracking-widest mb-6"
-            style={{
-              color: "#D4AF37",
-              fontFamily: "Montserrat, sans-serif",
-              textShadow: "0 0 60px rgba(212,175,55,0.3)",
-            }}
-          >
-            NEEV VORA
-          </h1>
           <p
             className="text-sm sm:text-base tracking-wider mb-10 max-w-md mx-auto"
             style={{ color: "rgba(212,175,55,0.6)" }}

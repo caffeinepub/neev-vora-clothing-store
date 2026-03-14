@@ -6,14 +6,7 @@ import Nat "mo:core/Nat";
 import Runtime "mo:core/Runtime";
 import Storage "blob-storage/Storage";
 import MixinStorage "blob-storage/Mixin";
-import AccessControl "authorization/access-control";
 
-(with migration =
-  // Discard old accessControlState stable variable from previous version
-  func (old : { accessControlState : AccessControl.AccessControlState }) : {} {
-    {}
-  }
-)
 persistent actor {
   include MixinStorage();
 

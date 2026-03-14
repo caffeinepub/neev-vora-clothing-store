@@ -1,12 +1,22 @@
-import { Mail } from "lucide-react";
+import { Instagram, Mail } from "lucide-react";
 import { navigate } from "../App";
 
 const links = [
   { label: "Shop All", action: () => navigate("catalog") },
-  { label: "My Orders", action: () => navigate("my-orders") },
   { label: "Support & FAQ", action: () => navigate("support") },
   { label: "Admin", action: () => navigate("admin") },
   { label: "Contact", action: () => navigate("support") },
+];
+
+const instagramLinks = [
+  {
+    label: "@meet_.enterprise",
+    url: "https://www.instagram.com/meet_.enterprise?igsh=MXg0ZHpuN3Q3NHlscg==",
+  },
+  {
+    label: "@navkar_fashionn",
+    url: "https://www.instagram.com/navkar_fashionn?igsh=YmF4Y2FsOGVvM2Fm",
+  },
 ];
 
 export default function Footer() {
@@ -22,7 +32,7 @@ export default function Footer() {
         fontFamily: "Montserrat, sans-serif",
       }}
     >
-      <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Brand */}
         <div>
           <h2
@@ -85,6 +95,33 @@ export default function Footer() {
                 meetenterprise654@gmail.com
               </a>
             </li>
+          </ul>
+        </div>
+
+        {/* Instagram */}
+        <div>
+          <h3
+            className="text-sm font-black tracking-[0.3em] mb-4"
+            style={{ color: "#D4AF37" }}
+          >
+            FOLLOW US
+          </h3>
+          <ul className="space-y-3">
+            {instagramLinks.map((ig, i) => (
+              <li key={ig.label}>
+                <a
+                  data-ocid={`footer.instagram.link.${i + 1}`}
+                  href={ig.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm hover:opacity-80 tracking-wider transition-opacity"
+                  style={{ color: "rgba(212,175,55,0.75)" }}
+                >
+                  <Instagram size={14} style={{ color: "#D4AF37" }} />
+                  {ig.label}
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Mail } from "lucide-react";
+import { ChevronDown, ChevronUp, Instagram, Mail } from "lucide-react";
 import { useState } from "react";
 
 const faqs = [
@@ -21,6 +21,17 @@ const faqs = [
   {
     q: "How do I contact support?",
     a: "Email us at meetenterprise654@gmail.com. Our team is available to help you with any questions or concerns.",
+  },
+];
+
+const instagramLinks = [
+  {
+    label: "@meet_.enterprise",
+    url: "https://www.instagram.com/meet_.enterprise?igsh=MXg0ZHpuN3Q3NHlscg==",
+  },
+  {
+    label: "@navkar_fashionn",
+    url: "https://www.instagram.com/navkar_fashionn?igsh=YmF4Y2FsOGVvM2Fm",
   },
 ];
 
@@ -94,6 +105,53 @@ export default function Support() {
           {faqs.map((faq) => (
             <FAQItem key={faq.q} q={faq.q} a={faq.a} />
           ))}
+        </section>
+
+        {/* Instagram Section */}
+        <section
+          className="rounded-2xl p-8 mb-6"
+          style={{
+            background: "rgba(212,175,55,0.05)",
+            border: "1px solid rgba(212,175,55,0.25)",
+          }}
+        >
+          <Instagram
+            size={32}
+            className="mx-auto mb-4"
+            style={{ color: "#D4AF37" }}
+          />
+          <h2
+            className="text-lg font-black tracking-widest mb-2 text-center"
+            style={{ color: "#D4AF37" }}
+          >
+            FOLLOW US ON INSTAGRAM
+          </h2>
+          <p
+            className="text-sm mb-6 text-center"
+            style={{ color: "rgba(212,175,55,0.6)" }}
+          >
+            Stay updated with our latest collections
+          </p>
+          <div className="flex flex-col gap-3">
+            {instagramLinks.map((ig, i) => (
+              <a
+                key={ig.label}
+                data-ocid={`support.instagram.link.${i + 1}`}
+                href={ig.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-3 py-3 px-6 rounded-xl font-bold tracking-wider text-sm hover:opacity-80 transition-opacity"
+                style={{
+                  background: "rgba(212,175,55,0.1)",
+                  border: "1px solid rgba(212,175,55,0.4)",
+                  color: "#D4AF37",
+                }}
+              >
+                <Instagram size={18} />
+                {ig.label}
+              </a>
+            ))}
+          </div>
         </section>
 
         <section

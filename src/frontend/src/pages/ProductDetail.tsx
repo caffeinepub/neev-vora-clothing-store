@@ -206,6 +206,41 @@ export default function ProductDetail({ productId }: Props) {
               </div>
             )}
 
+            {/* Colours */}
+            {(() => {
+              const colours = (
+                localStorage.getItem(`product-colours-${product.id}`) || ""
+              )
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean);
+              return colours.length > 0 ? (
+                <div>
+                  <p
+                    className="text-xs tracking-[0.3em] mb-3"
+                    style={{ color: "rgba(212,175,55,0.5)" }}
+                  >
+                    COLOURS
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {colours.map((colour) => (
+                      <span
+                        key={colour}
+                        className="px-3 py-1 rounded-full text-xs font-bold"
+                        style={{
+                          background: "rgba(212,175,55,0.15)",
+                          border: "1px solid rgba(212,175,55,0.4)",
+                          color: "#D4AF37",
+                        }}
+                      >
+                        {colour}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })()}
+
             {/* Quantity */}
             <div>
               <p
