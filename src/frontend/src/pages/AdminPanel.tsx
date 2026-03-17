@@ -348,16 +348,41 @@ export default function AdminPanel() {
         ExternalBlob.fromURL(url),
       );
 
+      // Compress images locally to base64 data URLs (avoids blob storage upload errors)
+      const compressImageToDataURL = (file: File): Promise<string> =>
+        new Promise((resolve, reject) => {
+          const img = new Image();
+          const url = URL.createObjectURL(file);
+          img.onload = () => {
+            const maxW = 800;
+            const scale = img.width > maxW ? maxW / img.width : 1;
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              reject(new Error("Canvas error"));
+              return;
+            }
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            resolve(canvas.toDataURL("image/jpeg", 0.7));
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error("Image load error"));
+          };
+          img.src = url;
+        });
+
       const totalFiles = selectedFiles.length;
       for (let i = 0; i < totalFiles; i++) {
-        const file = selectedFiles[i];
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        const blob = ExternalBlob.fromBytes(bytes).withUploadProgress((pct) => {
-          setUploadProgress(
-            Math.round((i / totalFiles + pct / 100 / totalFiles) * 100),
-          );
-        });
-        images.push(blob);
+        setUploadProgress(Math.round((i / Math.max(totalFiles, 1)) * 100));
+        const dataURL = await compressImageToDataURL(selectedFiles[i]);
+        images.push(ExternalBlob.fromURL(dataURL));
+        setUploadProgress(
+          Math.round(((i + 1) / Math.max(totalFiles, 1)) * 100),
+        );
       }
 
       if (images.length === 0) {

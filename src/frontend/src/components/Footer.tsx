@@ -133,7 +133,7 @@ export default function Footer() {
           color: "rgba(212,175,55,0.4)",
         }}
       >
-        © {year} All Rights Reserved. This site is made by Meet Enterprise.
+        © {year} All Rights Reserved. This site is made by Neev Vora.
       </div>
     </footer>
   );
