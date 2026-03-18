@@ -232,6 +232,7 @@ export default function AdminPanel() {
 
   // Category form
   const [showCatModal, setShowCatModal] = useState(false);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [editCat, setEditCat] = useState<Category | null>(null);
   const [catForm, setCatForm] = useState({ id: "", name: "", description: "" });
 
@@ -1094,166 +1095,358 @@ export default function AdminPanel() {
                 <p style={{ color: "rgba(212,175,55,0.5)" }}>No orders yet.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table
-                  data-ocid="admin.orders.table"
-                  className="w-full text-sm"
-                >
-                  <thead>
-                    <tr
-                      style={{ borderBottom: "1px solid rgba(212,175,55,0.2)" }}
+              <>
+                {/* Colour Demand Summary */}
+                {(() => {
+                  const colourCounts: Record<string, number> = {};
+                  for (const o of orders) {
+                    for (const item of o.items) {
+                      if (item.size.includes(" | ")) {
+                        const colour = item.size.split(" | ")[1]?.trim();
+                        if (colour) {
+                          colourCounts[colour] =
+                            (colourCounts[colour] || 0) + Number(item.quantity);
+                        }
+                      }
+                    }
+                  }
+                  const sorted = Object.entries(colourCounts).sort(
+                    (a, b) => b[1] - a[1],
+                  );
+                  if (sorted.length === 0) return null;
+                  return (
+                    <div
+                      className="mb-6 p-4 rounded-xl"
+                      style={{
+                        background: "rgba(212,175,55,0.06)",
+                        border: "1px solid rgba(212,175,55,0.3)",
+                      }}
                     >
-                      {[
-                        "Order ID",
-                        "Items",
-                        "Total",
-                        "Payment",
-                        "Status",
-                        "Voucher",
-                        "Actions",
-                      ].map((h) => (
-                        <th
-                          key={h}
-                          className="p-3 text-left text-xs tracking-wider"
-                          style={{ color: "rgba(212,175,55,0.6)" }}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((o, i) => {
-                      const sc = statusColor(o.status);
-                      return (
-                        <tr
-                          key={o.id}
-                          data-ocid={`admin.order.row.${i + 1}`}
-                          style={{
-                            borderBottom: "1px solid rgba(212,175,55,0.1)",
-                          }}
-                        >
-                          <td
-                            className="p-3 text-xs"
-                            style={{ color: "rgba(212,175,55,0.5)" }}
+                      <p
+                        className="text-xs tracking-[0.3em] mb-3 font-bold"
+                        style={{ color: "#D4AF37" }}
+                      >
+                        🎨 COLOUR DEMAND SUMMARY
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {sorted.map(([colour, count]) => (
+                          <span
+                            key={colour}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black"
+                            style={{
+                              background: "rgba(212,175,55,0.18)",
+                              border: "1.5px solid #D4AF37",
+                              color: "#D4AF37",
+                            }}
                           >
-                            {o.id.slice(0, 8)}...
-                          </td>
-                          <td className="p-3" style={{ color: "#D4AF37" }}>
-                            {o.items.length} item(s)
-                          </td>
-                          <td
-                            className="p-3 font-bold"
-                            style={{ color: "#D4AF37" }}
-                          >
-                            ₹{(Number(o.total) / 100).toLocaleString("en-IN")}
-                          </td>
-                          <td
-                            className="p-3"
+                            <span
+                              style={{
+                                display: "inline-block",
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                background: "#D4AF37",
+                                flexShrink: 0,
+                              }}
+                            />
+                            {colour}
+                            <span
+                              className="ml-1 px-1.5 py-0.5 rounded-full text-black font-black"
+                              style={{ background: "#D4AF37", fontSize: 10 }}
+                            >
+                              {count}
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div className="overflow-x-auto">
+                  <table
+                    data-ocid="admin.orders.table"
+                    className="w-full text-sm"
+                  >
+                    <thead>
+                      <tr
+                        style={{
+                          borderBottom: "1px solid rgba(212,175,55,0.2)",
+                        }}
+                      >
+                        {[
+                          "Order ID",
+                          "Items",
+                          "Total",
+                          "Payment",
+                          "Status",
+                          "Voucher",
+                          "Actions",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="p-3 text-left text-xs tracking-wider"
                             style={{ color: "rgba(212,175,55,0.6)" }}
                           >
-                            {o.paymentMethod}
-                          </td>
-                          <td className="p-3">
-                            <span
-                              className="px-2 py-1 rounded text-xs font-bold"
-                              style={{ background: sc.bg, color: sc.color }}
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.map((o, i) => {
+                        const sc = statusColor(o.status);
+                        const isExpanded = expandedOrderId === o.id;
+                        return (
+                          <>
+                            <tr
+                              key={o.id}
+                              data-ocid={`admin.order.row.${i + 1}`}
+                              style={{
+                                borderBottom: isExpanded
+                                  ? "none"
+                                  : "1px solid rgba(212,175,55,0.1)",
+                              }}
                             >
-                              {o.status}
-                            </span>
-                          </td>
-                          <td className="p-3">
-                            {Number(o.total) / 100 >= 1500 ? (
-                              <span
-                                style={{
-                                  color: "#D4AF37",
-                                  fontFamily: "monospace",
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  letterSpacing: "0.1em",
-                                }}
+                              <td
+                                className="p-3 text-xs"
+                                style={{ color: "rgba(212,175,55,0.5)" }}
                               >
-                                {getVoucherCode(o.id)}
-                              </span>
-                            ) : (
-                              <span
-                                style={{
-                                  color: "rgba(212,175,55,0.35)",
-                                  fontSize: 13,
-                                }}
-                              >
-                                &mdash;
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3">
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                data-ocid={`admin.order.fulfill.button.${i + 1}`}
-                                onClick={async () => {
-                                  await actor?.updateOrderStatus(
-                                    o.id,
-                                    "fulfilled",
-                                  );
-                                  loadData();
-                                }}
-                                disabled={o.status === "fulfilled"}
-                                className="px-3 py-1 rounded text-xs font-bold flex items-center gap-1 disabled:opacity-40"
-                                style={{
-                                  background: "rgba(34,197,94,0.15)",
-                                  color: "#22c55e",
-                                  border: "1px solid rgba(34,197,94,0.3)",
-                                }}
-                              >
-                                <Check size={12} /> Fulfill
-                              </button>
-                              <button
-                                type="button"
-                                data-ocid={`admin.order.cancel.button.${i + 1}`}
-                                onClick={async () => {
-                                  await actor?.updateOrderStatus(
-                                    o.id,
-                                    "cancelled",
-                                  );
-                                  loadData();
-                                }}
-                                disabled={o.status === "cancelled"}
-                                className="px-3 py-1 rounded text-xs font-bold flex items-center gap-1 disabled:opacity-40"
-                                style={{
-                                  background: "rgba(239,68,68,0.15)",
-                                  color: "#ef4444",
-                                  border: "1px solid rgba(239,68,68,0.3)",
-                                }}
-                              >
-                                <X size={12} /> Cancel
-                              </button>
-                              <button
-                                type="button"
-                                data-ocid={`admin.order.delete_button.${i + 1}`}
-                                onClick={async () => {
-                                  if (confirm("Delete this order?")) {
-                                    await actor?.deleteOrder(o.id);
-                                    loadData();
+                                {o.id.slice(0, 8)}...
+                              </td>
+                              <td className="p-3">
+                                <button
+                                  type="button"
+                                  data-ocid={`admin.order.items.button.${i + 1}`}
+                                  onClick={() =>
+                                    setExpandedOrderId(isExpanded ? null : o.id)
                                   }
-                                }}
-                                className="px-3 py-1 rounded text-xs font-bold flex items-center gap-1"
+                                  className="flex items-center gap-1.5 font-bold text-xs px-2 py-1 rounded transition-all hover:opacity-80"
+                                  style={{
+                                    background: isExpanded
+                                      ? "rgba(212,175,55,0.2)"
+                                      : "rgba(212,175,55,0.08)",
+                                    border: "1px solid rgba(212,175,55,0.4)",
+                                    color: "#D4AF37",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  {o.items.length} item(s){" "}
+                                  {isExpanded ? "▲" : "▼"}
+                                </button>
+                              </td>
+                              <td
+                                className="p-3 font-bold"
+                                style={{ color: "#D4AF37" }}
+                              >
+                                ₹
+                                {(Number(o.total) / 100).toLocaleString(
+                                  "en-IN",
+                                )}
+                              </td>
+                              <td
+                                className="p-3"
+                                style={{ color: "rgba(212,175,55,0.6)" }}
+                              >
+                                {o.paymentMethod}
+                              </td>
+                              <td className="p-3">
+                                <span
+                                  className="px-2 py-1 rounded text-xs font-bold"
+                                  style={{ background: sc.bg, color: sc.color }}
+                                >
+                                  {o.status}
+                                </span>
+                              </td>
+                              <td className="p-3">
+                                {Number(o.total) / 100 >= 1500 ? (
+                                  <span
+                                    style={{
+                                      color: "#D4AF37",
+                                      fontFamily: "monospace",
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      letterSpacing: "0.1em",
+                                    }}
+                                  >
+                                    {getVoucherCode(o.id)}
+                                  </span>
+                                ) : (
+                                  <span
+                                    style={{
+                                      color: "rgba(212,175,55,0.35)",
+                                      fontSize: 13,
+                                    }}
+                                  >
+                                    &mdash;
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-3">
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    data-ocid={`admin.order.fulfill.button.${i + 1}`}
+                                    onClick={async () => {
+                                      await actor?.updateOrderStatus(
+                                        o.id,
+                                        "fulfilled",
+                                      );
+                                      loadData();
+                                    }}
+                                    disabled={o.status === "fulfilled"}
+                                    className="px-3 py-1 rounded text-xs font-bold flex items-center gap-1 disabled:opacity-40"
+                                    style={{
+                                      background: "rgba(34,197,94,0.15)",
+                                      color: "#22c55e",
+                                      border: "1px solid rgba(34,197,94,0.3)",
+                                    }}
+                                  >
+                                    <Check size={12} /> Fulfill
+                                  </button>
+                                  <button
+                                    type="button"
+                                    data-ocid={`admin.order.cancel.button.${i + 1}`}
+                                    onClick={async () => {
+                                      await actor?.updateOrderStatus(
+                                        o.id,
+                                        "cancelled",
+                                      );
+                                      loadData();
+                                    }}
+                                    disabled={o.status === "cancelled"}
+                                    className="px-3 py-1 rounded text-xs font-bold flex items-center gap-1 disabled:opacity-40"
+                                    style={{
+                                      background: "rgba(239,68,68,0.15)",
+                                      color: "#ef4444",
+                                      border: "1px solid rgba(239,68,68,0.3)",
+                                    }}
+                                  >
+                                    <X size={12} /> Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    data-ocid={`admin.order.delete_button.${i + 1}`}
+                                    onClick={async () => {
+                                      if (confirm("Delete this order?")) {
+                                        await actor?.deleteOrder(o.id);
+                                        loadData();
+                                      }
+                                    }}
+                                    className="px-3 py-1 rounded text-xs font-bold flex items-center gap-1"
+                                    style={{
+                                      background: "rgba(107,114,128,0.15)",
+                                      color: "#9ca3af",
+                                      border: "1px solid rgba(107,114,128,0.3)",
+                                    }}
+                                  >
+                                    <Trash2 size={12} /> Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr
+                                key={`${o.id}-expanded`}
                                 style={{
-                                  background: "rgba(107,114,128,0.15)",
-                                  color: "#9ca3af",
-                                  border: "1px solid rgba(107,114,128,0.3)",
+                                  borderBottom:
+                                    "1px solid rgba(212,175,55,0.1)",
                                 }}
                               >
-                                <Trash2 size={12} /> Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                                <td colSpan={7} className="px-4 pb-4 pt-1">
+                                  <div
+                                    className="rounded-lg p-3 space-y-2"
+                                    style={{
+                                      background: "rgba(212,175,55,0.05)",
+                                      border: "1px solid rgba(212,175,55,0.2)",
+                                    }}
+                                  >
+                                    <p
+                                      className="text-xs tracking-[0.2em] font-bold mb-2"
+                                      style={{ color: "rgba(212,175,55,0.6)" }}
+                                    >
+                                      ORDER ITEMS
+                                    </p>
+                                    {o.items.map((item) => {
+                                      const hasPipe = item.size.includes(" | ");
+                                      const sizePart = hasPipe
+                                        ? item.size.split(" | ")[0].trim()
+                                        : item.size;
+                                      const colourPart = hasPipe
+                                        ? item.size.split(" | ")[1]?.trim()
+                                        : null;
+                                      return (
+                                        <div
+                                          key={item.productId + item.size}
+                                          className="flex items-center gap-3 flex-wrap py-1.5 px-2 rounded"
+                                          style={{
+                                            background: "rgba(212,175,55,0.04)",
+                                            border:
+                                              "1px solid rgba(212,175,55,0.1)",
+                                          }}
+                                        >
+                                          <span
+                                            className="text-xs font-mono"
+                                            style={{
+                                              color: "rgba(212,175,55,0.5)",
+                                            }}
+                                          >
+                                            {item.productId.slice(0, 8)}
+                                          </span>
+                                          <span
+                                            className="text-xs font-bold"
+                                            style={{ color: "#D4AF37" }}
+                                          >
+                                            Qty: {item.quantity.toString()}
+                                          </span>
+                                          <span
+                                            className="text-xs px-2 py-0.5 rounded"
+                                            style={{
+                                              background:
+                                                "rgba(212,175,55,0.12)",
+                                              color: "#D4AF37",
+                                              border:
+                                                "1px solid rgba(212,175,55,0.3)",
+                                            }}
+                                          >
+                                            Size: {sizePart}
+                                          </span>
+                                          {colourPart && (
+                                            <span
+                                              className="flex items-center gap-1.5 text-xs font-black px-3 py-1 rounded-full"
+                                              style={{
+                                                background:
+                                                  "rgba(212,175,55,0.22)",
+                                                border: "1.5px solid #D4AF37",
+                                                color: "#D4AF37",
+                                              }}
+                                            >
+                                              <span
+                                                style={{
+                                                  display: "inline-block",
+                                                  width: 8,
+                                                  height: 8,
+                                                  borderRadius: "50%",
+                                                  background: "#D4AF37",
+                                                }}
+                                              />
+                                              {colourPart}
+                                            </span>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         )}

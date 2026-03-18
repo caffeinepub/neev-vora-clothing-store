@@ -12,14 +12,20 @@ export interface CartItem {
   price: bigint;
   imageUrl: string;
   size: string;
+  colour?: string;
   quantity: number;
 }
 
 interface CartContextType {
   items: CartItem[];
   addItem: (item: CartItem) => void;
-  removeItem: (id: string, size: string) => void;
-  updateQuantity: (id: string, size: string, qty: number) => void;
+  removeItem: (id: string, size: string, colour?: string) => void;
+  updateQuantity: (
+    id: string,
+    size: string,
+    qty: number,
+    colour?: string,
+  ) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: bigint;
@@ -53,11 +59,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = (item: CartItem) => {
     setItems((prev) => {
       const existing = prev.find(
-        (i) => i.id === item.id && i.size === item.size,
+        (i) =>
+          i.id === item.id && i.size === item.size && i.colour === item.colour,
       );
       if (existing) {
         return prev.map((i) =>
-          i.id === item.id && i.size === item.size
+          i.id === item.id && i.size === item.size && i.colour === item.colour
             ? { ...i, quantity: i.quantity + item.quantity }
             : i,
         );
@@ -66,18 +73,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const removeItem = (id: string, size: string) => {
-    setItems((prev) => prev.filter((i) => !(i.id === id && i.size === size)));
+  const removeItem = (id: string, size: string, colour?: string) => {
+    setItems((prev) =>
+      prev.filter(
+        (i) => !(i.id === id && i.size === size && i.colour === colour),
+      ),
+    );
   };
 
-  const updateQuantity = (id: string, size: string, qty: number) => {
+  const updateQuantity = (
+    id: string,
+    size: string,
+    qty: number,
+    colour?: string,
+  ) => {
     if (qty <= 0) {
-      removeItem(id, size);
+      removeItem(id, size, colour);
       return;
     }
     setItems((prev) =>
       prev.map((i) =>
-        i.id === id && i.size === size ? { ...i, quantity: qty } : i,
+        i.id === id && i.size === size && i.colour === colour
+          ? { ...i, quantity: qty }
+          : i,
       ),
     );
   };

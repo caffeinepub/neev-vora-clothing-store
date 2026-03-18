@@ -15,6 +15,7 @@ export default function ProductDetail({ productId }: Props) {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState("");
+  const [selectedColour, setSelectedColour] = useState("");
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
@@ -40,6 +41,7 @@ export default function ProductDetail({ productId }: Props) {
       price: product.price,
       imageUrl: imgUrl,
       size: selectedSize,
+      colour: selectedColour || undefined,
       quantity: qty,
     });
     setAdded(true);
@@ -206,7 +208,7 @@ export default function ProductDetail({ productId }: Props) {
               </div>
             )}
 
-            {/* Colours */}
+            {/* Colours - Clickable */}
             {(() => {
               const colours = (
                 localStorage.getItem(`product-colours-${product.id}`) || ""
@@ -220,21 +222,44 @@ export default function ProductDetail({ productId }: Props) {
                     className="text-xs tracking-[0.3em] mb-3"
                     style={{ color: "rgba(212,175,55,0.5)" }}
                   >
-                    COLOURS
+                    SELECT COLOUR
+                    {selectedColour && (
+                      <span
+                        className="ml-2 normal-case"
+                        style={{ color: "#D4AF37" }}
+                      >
+                        — {selectedColour}
+                      </span>
+                    )}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {colours.map((colour) => (
-                      <span
+                      <button
                         key={colour}
-                        className="px-3 py-1 rounded-full text-xs font-bold"
+                        type="button"
+                        data-ocid="product.colour.toggle"
+                        onClick={() =>
+                          setSelectedColour(
+                            selectedColour === colour ? "" : colour,
+                          )
+                        }
+                        className="px-3 py-1 rounded-full text-xs font-bold transition-all"
                         style={{
-                          background: "rgba(212,175,55,0.15)",
-                          border: "1px solid rgba(212,175,55,0.4)",
-                          color: "#D4AF37",
+                          background:
+                            selectedColour === colour
+                              ? "#D4AF37"
+                              : "rgba(212,175,55,0.15)",
+                          border: `1px solid ${
+                            selectedColour === colour
+                              ? "#D4AF37"
+                              : "rgba(212,175,55,0.4)"
+                          }`,
+                          color: selectedColour === colour ? "#000" : "#D4AF37",
+                          cursor: "pointer",
                         }}
                       >
                         {colour}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </div>

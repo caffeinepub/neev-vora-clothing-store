@@ -50,7 +50,7 @@ export default function CartPage() {
         <div className="space-y-4 mb-8">
           {items.map((item, i) => (
             <div
-              key={`${item.id}-${item.size}`}
+              key={`${item.id}-${item.size}-${item.colour ?? ""}`}
               data-ocid={`cart.item.${i + 1}`}
               className="glass-card p-4 flex items-center gap-4"
             >
@@ -84,6 +84,18 @@ export default function CartPage() {
                 >
                   Size: {item.size}
                 </p>
+                {item.colour && (
+                  <span
+                    className="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-bold"
+                    style={{
+                      background: "rgba(212,175,55,0.2)",
+                      border: "1px solid rgba(212,175,55,0.5)",
+                      color: "#D4AF37",
+                    }}
+                  >
+                    🎨 {item.colour}
+                  </span>
+                )}
                 <p
                   className="text-sm font-bold mt-1"
                   style={{ color: "#D4AF37" }}
@@ -97,7 +109,12 @@ export default function CartPage() {
                   type="button"
                   data-ocid={`cart.qty_minus.button.${i + 1}`}
                   onClick={() =>
-                    updateQuantity(item.id, item.size, item.quantity - 1)
+                    updateQuantity(
+                      item.id,
+                      item.size,
+                      item.quantity - 1,
+                      item.colour,
+                    )
                   }
                   className="btn-outline-gold w-8 h-8 flex items-center justify-center rounded"
                 >
@@ -113,7 +130,12 @@ export default function CartPage() {
                   type="button"
                   data-ocid={`cart.qty_plus.button.${i + 1}`}
                   onClick={() =>
-                    updateQuantity(item.id, item.size, item.quantity + 1)
+                    updateQuantity(
+                      item.id,
+                      item.size,
+                      item.quantity + 1,
+                      item.colour,
+                    )
                   }
                   className="btn-outline-gold w-8 h-8 flex items-center justify-center rounded"
                 >
@@ -131,7 +153,7 @@ export default function CartPage() {
                 <button
                   type="button"
                   data-ocid={`cart.delete_button.${i + 1}`}
-                  onClick={() => removeItem(item.id, item.size)}
+                  onClick={() => removeItem(item.id, item.size, item.colour)}
                   className="mt-2 hover:opacity-70"
                   style={{ color: "#ef4444" }}
                 >

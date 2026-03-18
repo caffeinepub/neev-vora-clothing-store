@@ -29,7 +29,7 @@ export default function Payment() {
     try {
       const orderItems = items.map((i) => ({
         productId: i.id,
-        size: i.size,
+        size: i.colour ? `${i.size} | ${i.colour}` : i.size,
         quantity: BigInt(i.quantity),
       }));
       const fullAddress = `${checkoutData.address}, ${checkoutData.city} - ${checkoutData.pincode}`;
